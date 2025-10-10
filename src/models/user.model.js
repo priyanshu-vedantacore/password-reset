@@ -2,13 +2,16 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true, minlength: 6 },
-  resetPasswordToken: { type: String },
-  resetPasswordExpire: { type: Date },
-});
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, minlength: 6, select: false },
+    resetPasswordToken: { type: String },
+    resetPasswordExpire: { type: Date },
+  },
+  { timestamps: true }
+);
 
 // Hash password before save
 userSchema.pre("save", async function (next) {
@@ -16,7 +19,7 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
-
+ 
 // Compare passwords
 userSchema.methods.matchPassword = function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);

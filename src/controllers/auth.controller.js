@@ -1,6 +1,7 @@
 import { registerUser } from "../services/auth.service.js";
 import User from "../models/user.model.js";
 import { generateTokens } from "../utils/generateTokens.js";
+import { sendEmail } from "../utils/sendEmail.js";
 import crypto from "crypto";
 
 export const register = async (req, res, next) => {
@@ -26,7 +27,7 @@ export const login = async (req, res) => {
   if (!email || !password)
     return res.status(400).json({ message: "Email and password required" });
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
   if (!user || !(await user.matchPassword(password)))
     return res.status(401).json({ message: "Invalid credentials" });
 
@@ -51,7 +52,8 @@ export const forgotPassword = async (req, res, next) => {
   const resetToken = user.generatePasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
+  const resetUrl = `${baseUrl}/reset-password/${resetToken}`;
   const message = `You requested a password reset. Click here: ${resetUrl}`;
 
   try {
